@@ -1,2 +1,3 @@
-# urban-succotash
-New version of personal site, using Elm
+# README
+
+New version of my personal website, written in Elm
