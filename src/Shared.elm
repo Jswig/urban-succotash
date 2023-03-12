@@ -8,6 +8,8 @@ import Pages.PageUrl exposing (PageUrl)
 import Path exposing (Path)
 import Route exposing (Route)
 import SharedTemplate exposing (SharedTemplate)
+import String
+import Time
 import View exposing (View)
 
 
@@ -29,18 +31,20 @@ type Msg
         , fragment : Maybe String
         }
     | SharedMsg SharedMsg
+    | Tick Time.Posix
 
 
 type alias Data =
     ()
 
 
-type SharedMsg
-    = NoOp
+type SharedMsg =
+    NoOp
 
 
 type alias Model =
     { showMobileMenu : Bool
+    , currentTime : Time.Posix
     }
 
 
@@ -59,7 +63,11 @@ init :
             }
     -> ( Model, Cmd Msg )
 init navigationKey flags maybePagePath =
-    ( { showMobileMenu = False }
+    ( { showMobileMenu = False
+
+      -- initial timestamp corresponds to March 12th, 2023
+      , currentTime = Time.millisToPosix 1678663839000
+      }
     , Cmd.none
     )
 
@@ -70,13 +78,18 @@ update msg model =
         OnPageChange _ ->
             ( { model | showMobileMenu = False }, Cmd.none )
 
-        SharedMsg globalMsg ->
+        Tick newTime ->
+            ( { model | currentTime = newTime }
+            , Cmd.none
+            )
+        
+        SharedMsg _ ->
             ( model, Cmd.none )
 
 
 subscriptions : Path -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.none
+    Time.every 1000 Tick
 
 
 data : DataSource.DataSource Data
@@ -89,9 +102,13 @@ header =
     Html.header [] [ Html.text "Anders Poirel" ]
 
 
-footer : Html msg
-footer =
-    Html.footer [] [ Html.text "© Anders Poirel" ]
+footer : Time.Posix -> Html msg
+footer currentTime =
+    let
+        year =
+            String.fromInt (Time.toYear Time.utc currentTime)
+    in
+    Html.footer [] [ Html.text ("©" ++ year ++ " Anders Poirel") ]
 
 
 view :
@@ -105,6 +122,13 @@ view :
     -> View msg
     -> { body : Html msg, title : String }
 view sharedData page model toMsg pageView =
-    { body = Html.div [] [ header, Html.div [] pageView.body, footer ]
+    let
+        bodyContent =
+            [ header
+            , Html.div [] pageView.body
+            , footer model.currentTime
+            ]
+    in
+    { body = Html.div [] bodyContent
     , title = pageView.title
     }
