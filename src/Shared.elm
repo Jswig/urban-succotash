@@ -84,6 +84,16 @@ data =
     DataSource.succeed ()
 
 
+header : Html msg
+header =
+    Html.header [] [ Html.text "Anders Poirel" ]
+
+
+footer : Html msg
+footer =
+    Html.footer [] [ Html.text "© Anders Poirel" ]
+
+
 view :
     Data
     ->
@@ -95,6 +105,6 @@ view :
     -> View msg
     -> { body : Html msg, title : String }
 view sharedData page model toMsg pageView =
-    { body = Html.div [] pageView.body
+    { body = Html.div [] [ header, Html.div [] pageView.body, footer ]
     , title = pageView.title
     }
