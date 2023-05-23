@@ -6,15 +6,17 @@ module Route exposing (Route(..), link, matchers, routeToPath, toLink, urlToRout
 
 -}
 
+
 import Html exposing (Attribute, Html)
 import Html.Attributes as Attr
-import Pages.Internal.Router
 import Path exposing (Path)
+import Pages.Internal.Router
 
 
 {-| -}
 type Route
     = About
+    | Me
     | Index
 
 
@@ -22,8 +24,8 @@ type Route
 urlToRoute : { url | path : String } -> Maybe Route
 urlToRoute url =
     url.path
-        |> withoutBaseUrl
-        |> Pages.Internal.Router.firstMatch matchers
+    |> withoutBaseUrl 
+    |> Pages.Internal.Router.firstMatch matchers
 
 
 baseUrl : String
@@ -34,41 +36,50 @@ baseUrl =
 baseUrlAsPath : List String
 baseUrlAsPath =
     baseUrl
-        |> String.split "/"
-        |> List.filter (not << String.isEmpty)
+    |> String.split "/"
+    |> List.filter (not << String.isEmpty)
 
 
 withoutBaseUrl path =
-    if path |> String.startsWith baseUrl then
-        String.dropLeft (String.length baseUrl) path
-
+    if (path |> String.startsWith baseUrl) then
+      String.dropLeft (String.length baseUrl) path
     else
-        path
-
+      path
 
 {-| -}
 matchers : List (Pages.Internal.Router.Matcher Route)
 matchers =
     [ { pattern = "^\\/about$"
-      , toRoute =
-            \matches ->
-                case matches of
-                    [] ->
-                        Just About
+      , toRoute = \matches ->
+      case matches of
+          [  ] ->
+              Just About
+          _ ->
+              Nothing
 
-                    _ ->
-                        Nothing
-      }
+  
+     }
+    , { pattern = "^\\/me$"
+      , toRoute = \matches ->
+      case matches of
+          [  ] ->
+              Just Me
+          _ ->
+              Nothing
+
+  
+     }
     , { pattern = "^\\/$"
-      , toRoute =
-            \matches ->
-                case matches of
-                    [] ->
-                        Just Index
+      , toRoute = \matches ->
+      case matches of
+          [  ] ->
+              Just Index
+          _ ->
+              Nothing
 
-                    _ ->
-                        Nothing
-      }
+  
+     }
+
     ]
 
 
@@ -77,11 +88,11 @@ routeToPath : Route -> List String
 routeToPath route =
     case route of
         About ->
-            List.concat [ [ "about" ] ]
-
+           List.concat [ [ "about" ] ]
+        Me ->
+           List.concat [ [ "me" ] ]
         Index ->
-            List.concat []
-
+           List.concat [  ]
 
 {-| -}
 toPath : Route -> Path

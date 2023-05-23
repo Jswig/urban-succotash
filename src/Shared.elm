@@ -3,6 +3,7 @@ module Shared exposing (Data, Model, Msg(..), SharedMsg(..), template)
 import Browser.Navigation
 import DataSource
 import Html exposing (Html)
+import Html.Attributes
 import Pages.Flags
 import Pages.PageUrl exposing (PageUrl)
 import Path exposing (Path)
@@ -97,9 +98,22 @@ data =
     DataSource.succeed ()
 
 
+link : String -> String -> Html msg
+link path label =
+    Html.div [] [ Html.a [ Html.Attributes.href path ] [ Html.text label ] ]
+
+
+navBar : Html msg
+navBar =
+    Html.div []
+        [ link "/" "home"
+        , link "/me" "me"
+        ]
+
+
 header : Html msg
 header =
-    Html.header [] [ Html.text "Anders Poirel" ]
+    Html.header [] [ navBar ]
 
 
 footer : Time.Posix -> Html msg
@@ -108,7 +122,10 @@ footer currentTime =
         year =
             String.fromInt (Time.toYear Time.utc currentTime)
     in
-    Html.footer [] [ Html.text ("©" ++ year ++ " Anders Poirel") ]
+    Html.footer []
+        [ Html.text ("©" ++ year ++ " Anders Poirel")
+        , link "/about" "about this site"
+        ]
 
 
 view :

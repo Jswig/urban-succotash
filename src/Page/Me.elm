@@ -1,6 +1,7 @@
-module Page.About exposing (Data, Model, Msg, page)
+module Page.Me exposing (Data, Model, Msg, page)
 
 import DataSource exposing (DataSource)
+import DataSource.File exposing (bodyWithoutFrontmatter)
 import Head
 import Head.Seo as Seo
 import Page exposing (Page, PageWithState, StaticPayload)
@@ -32,12 +33,12 @@ page =
 
 
 type alias Data =
-    ()
+    String
 
 
 data : DataSource Data
 data =
-    DataSource.succeed ()
+    DataSource.File.bodyWithoutFrontmatter "content/about.md"
 
 
 head :
@@ -66,4 +67,4 @@ view :
     -> StaticPayload Data RouteParams
     -> View Msg
 view maybeUrl sharedModel static =
-    View.placeholder "About"
+    View.placeholder "Me"
