@@ -2,8 +2,10 @@ module Page.Me exposing (Data, Model, Msg, page)
 
 import DataSource exposing (DataSource)
 import DataSource.File exposing (bodyWithoutFrontmatter)
+import Html
 import Head
 import Head.Seo as Seo
+import Markdown
 import Page exposing (Page, PageWithState, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
@@ -38,7 +40,7 @@ type alias Data =
 
 data : DataSource Data
 data =
-    DataSource.File.bodyWithoutFrontmatter "content/about.md"
+    DataSource.File.bodyWithoutFrontmatter "content/me.md"
 
 
 head :
@@ -67,4 +69,6 @@ view :
     -> StaticPayload Data RouteParams
     -> View Msg
 view maybeUrl sharedModel static =
-    View.placeholder "Me"
+    { title = "About me"
+    , body = [ Markdown.toHtml [] static.data ]
+    }
