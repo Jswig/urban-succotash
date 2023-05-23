@@ -2,5 +2,7 @@
 elm-stuff
 # elm-repl generated files
 repl-temp-*
+# elm-pages generated files
+.elm-pages/*
 
 node_modules
