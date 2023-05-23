@@ -38,8 +38,8 @@ type alias Data =
     ()
 
 
-type SharedMsg =
-    NoOp
+type SharedMsg
+    = NoOp
 
 
 type alias Model =
@@ -82,7 +82,7 @@ update msg model =
             ( { model | currentTime = newTime }
             , Cmd.none
             )
-        
+
         SharedMsg _ ->
             ( model, Cmd.none )
 
