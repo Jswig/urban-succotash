@@ -5116,6 +5116,52 @@ function _Http_track(router, xhr, tracker)
 	});
 }
 
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
+
+
 // CREATE
 
 var _Regex_never = /.^/;
@@ -13726,33 +13772,318 @@ var $author$project$Shared$OnPageChange = function (a) {
 	return {$: 'OnPageChange', a: a};
 };
 var $author$project$Shared$data = $dillonkearns$elm_pages$DataSource$succeed(_Utils_Tuple0);
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $author$project$Shared$init = F3(
 	function (navigationKey, flags, maybePagePath) {
 		return _Utils_Tuple2(
-			{showMobileMenu: false},
+			{
+				currentTime: $elm$time$Time$millisToPosix(1678663839000),
+				showMobileMenu: false
+			},
 			$elm$core$Platform$Cmd$none);
+	});
+var $author$project$Shared$Tick = function (a) {
+	return {$: 'Tick', a: a};
+};
+var $elm$time$Time$Every = F2(
+	function (a, b) {
+		return {$: 'Every', a: a, b: b};
+	});
+var $elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {processes: processes, taggers: taggers};
+	});
+var $elm$time$Time$init = $elm$core$Task$succeed(
+	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
+var $elm$time$Time$addMySub = F2(
+	function (_v0, state) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		var _v1 = A2($elm$core$Dict$get, interval, state);
+		if (_v1.$ === 'Nothing') {
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				_List_fromArray(
+					[tagger]),
+				state);
+		} else {
+			var taggers = _v1.a;
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				A2($elm$core$List$cons, tagger, taggers),
+				state);
+		}
+	});
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$setInterval = _Time_setInterval;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$time$Time$spawnHelp = F3(
+	function (router, intervals, processes) {
+		if (!intervals.b) {
+			return $elm$core$Task$succeed(processes);
+		} else {
+			var interval = intervals.a;
+			var rest = intervals.b;
+			var spawnTimer = $elm$core$Process$spawn(
+				A2(
+					$elm$time$Time$setInterval,
+					interval,
+					A2($elm$core$Platform$sendToSelf, router, interval)));
+			var spawnRest = function (id) {
+				return A3(
+					$elm$time$Time$spawnHelp,
+					router,
+					rest,
+					A3($elm$core$Dict$insert, interval, id, processes));
+			};
+			return A2($elm$core$Task$andThen, spawnRest, spawnTimer);
+		}
+	});
+var $elm$time$Time$onEffects = F3(
+	function (router, subs, _v0) {
+		var processes = _v0.processes;
+		var rightStep = F3(
+			function (_v6, id, _v7) {
+				var spawns = _v7.a;
+				var existing = _v7.b;
+				var kills = _v7.c;
+				return _Utils_Tuple3(
+					spawns,
+					existing,
+					A2(
+						$elm$core$Task$andThen,
+						function (_v5) {
+							return kills;
+						},
+						$elm$core$Process$kill(id)));
+			});
+		var newTaggers = A3($elm$core$List$foldl, $elm$time$Time$addMySub, $elm$core$Dict$empty, subs);
+		var leftStep = F3(
+			function (interval, taggers, _v4) {
+				var spawns = _v4.a;
+				var existing = _v4.b;
+				var kills = _v4.c;
+				return _Utils_Tuple3(
+					A2($elm$core$List$cons, interval, spawns),
+					existing,
+					kills);
+			});
+		var bothStep = F4(
+			function (interval, taggers, id, _v3) {
+				var spawns = _v3.a;
+				var existing = _v3.b;
+				var kills = _v3.c;
+				return _Utils_Tuple3(
+					spawns,
+					A3($elm$core$Dict$insert, interval, id, existing),
+					kills);
+			});
+		var _v1 = A6(
+			$elm$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			newTaggers,
+			processes,
+			_Utils_Tuple3(
+				_List_Nil,
+				$elm$core$Dict$empty,
+				$elm$core$Task$succeed(_Utils_Tuple0)));
+		var spawnList = _v1.a;
+		var existingDict = _v1.b;
+		var killTask = _v1.c;
+		return A2(
+			$elm$core$Task$andThen,
+			function (newProcesses) {
+				return $elm$core$Task$succeed(
+					A2($elm$time$Time$State, newTaggers, newProcesses));
+			},
+			A2(
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
+				},
+				killTask));
+	});
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$time$Time$onSelfMsg = F3(
+	function (router, interval, state) {
+		var _v0 = A2($elm$core$Dict$get, interval, state.taggers);
+		if (_v0.$ === 'Nothing') {
+			return $elm$core$Task$succeed(state);
+		} else {
+			var taggers = _v0.a;
+			var tellTaggers = function (time) {
+				return $elm$core$Task$sequence(
+					A2(
+						$elm$core$List$map,
+						function (tagger) {
+							return A2(
+								$elm$core$Platform$sendToApp,
+								router,
+								tagger(time));
+						},
+						taggers));
+			};
+			return A2(
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$succeed(state);
+				},
+				A2($elm$core$Task$andThen, tellTaggers, $elm$time$Time$now));
+		}
+	});
+var $elm$time$Time$subMap = F2(
+	function (f, _v0) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		return A2(
+			$elm$time$Time$Every,
+			interval,
+			A2($elm$core$Basics$composeL, f, tagger));
+	});
+_Platform_effectManagers['Time'] = _Platform_createManager($elm$time$Time$init, $elm$time$Time$onEffects, $elm$time$Time$onSelfMsg, 0, $elm$time$Time$subMap);
+var $elm$time$Time$subscription = _Platform_leaf('Time');
+var $elm$time$Time$every = F2(
+	function (interval, tagger) {
+		return $elm$time$Time$subscription(
+			A2($elm$time$Time$Every, interval, tagger));
 	});
 var $author$project$Shared$subscriptions = F2(
 	function (_v0, _v1) {
-		return $elm$core$Platform$Sub$none;
+		return A2($elm$time$Time$every, 1000, $author$project$Shared$Tick);
 	});
 var $author$project$Shared$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'OnPageChange') {
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{showMobileMenu: false}),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			var globalMsg = msg.a;
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+		switch (msg.$) {
+			case 'OnPageChange':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{showMobileMenu: false}),
+					$elm$core$Platform$Cmd$none);
+			case 'Tick':
+				var newTime = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{currentTime: newTime}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
+var $elm$html$Html$footer = _VirtualDom_node('footer');
+var $elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return $elm$core$Basics$floor(numerator / denominator);
+	});
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var $elm$time$Time$toAdjustedMinutes = F2(
+	function (_v0, time) {
+		var defaultOffset = _v0.a;
+		var eras = _v0.b;
+		return A3(
+			$elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var $elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2($elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var $elm$time$Time$toYear = F2(
+	function (zone, time) {
+		return $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).year;
+	});
+var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
+var $author$project$Shared$footer = function (currentTime) {
+	var year = $elm$core$String$fromInt(
+		A2($elm$time$Time$toYear, $elm$time$Time$utc, currentTime));
+	return A2(
+		$elm$html$Html$footer,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text('©' + (year + ' Anders Poirel'))
+			]));
+};
+var $elm$html$Html$header = _VirtualDom_node('header');
+var $author$project$Shared$header = A2(
+	$elm$html$Html$header,
+	_List_Nil,
+	_List_fromArray(
+		[
+			$elm$html$Html$text('Anders Poirel')
+		]));
 var $author$project$Shared$view = F5(
 	function (sharedData, page, model, toMsg, pageView) {
+		var bodyContent = _List_fromArray(
+			[
+				$author$project$Shared$header,
+				A2($elm$html$Html$div, _List_Nil, pageView.body),
+				$author$project$Shared$footer(model.currentTime)
+			]);
 		return {
-			body: A2($elm$html$Html$div, _List_Nil, pageView.body),
+			body: A2($elm$html$Html$div, _List_Nil, bodyContent),
 			title: pageView.title
 		};
 	});
@@ -14274,7 +14605,7 @@ var $author$project$TemplateModulesBeta$main = $dillonkearns$elm_pages$Pages$Int
 		urlToRoute: $author$project$Route$urlToRoute,
 		view: $author$project$TemplateModulesBeta$view
 	});
-_Platform_export({'TemplateModulesBeta':{'init':$author$project$TemplateModulesBeta$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Pages.Internal.Platform.Msg TemplateModulesBeta.Msg","aliases":{"Pages.ContentCache.ContentCache":{"args":[],"type":"Dict.Dict Pages.ContentCache.Path Pages.ContentCache.Entry"},"Pages.ContentCache.ContentJson":{"args":[],"type":"{ staticData : RequestsAndPending.RequestsAndPending, is404 : Basics.Bool, path : Maybe.Maybe String.String, notFoundReason : Maybe.Maybe Pages.Internal.NotFoundReason.Payload }"},"Page.Index.Msg":{"args":[],"type":"Basics.Never"},"Pages.ContentCache.Path":{"args":[],"type":"List.List String.String"},"Pages.Internal.NotFoundReason.Payload":{"args":[],"type":"{ path : Path.Path, reason : Pages.Internal.NotFoundReason.NotFoundReason }"},"RequestsAndPending.RequestsAndPending":{"args":[],"type":"Dict.Dict String.String (Maybe.Maybe String.String)"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Pages.Internal.NotFoundReason.ModuleContext":{"args":[],"type":"{ moduleName : List.List String.String, routePattern : Pages.Internal.RoutePattern.RoutePattern, matchedRouteParams : Pages.Internal.NotFoundReason.Record }"},"Pages.Internal.NotFoundReason.Record":{"args":[],"type":"List.List ( String.String, String.String )"},"Pages.Internal.RoutePattern.RoutePattern":{"args":[],"type":"{ segments : List.List Pages.Internal.RoutePattern.Segment, ending : Maybe.Maybe Pages.Internal.RoutePattern.Ending }"}},"unions":{"Pages.Internal.Platform.Msg":{"args":["userMsg"],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"],"UserMsg":["userMsg"],"UpdateCache":["Result.Result Http.Error ( Url.Url, Pages.ContentCache.ContentJson, Pages.ContentCache.ContentCache )"],"UpdateCacheAndUrl":["Url.Url","Result.Result Http.Error ( Url.Url, Pages.ContentCache.ContentJson, Pages.ContentCache.ContentCache )"],"PageScrollComplete":[],"HotReloadComplete":["Pages.ContentCache.ContentJson"],"NoOp":[]}},"TemplateModulesBeta.Msg":{"args":[],"tags":{"MsgGlobal":["Shared.Msg"],"OnPageChange":["{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : Path.Path, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String, metadata : Maybe.Maybe Route.Route }"],"MsgIndex":["Page.Index.Msg"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Pages.ContentCache.Entry":{"args":[],"tags":{"Parsed":["Pages.ContentCache.ContentJson"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Shared.Msg":{"args":[],"tags":{"OnPageChange":["{ path : Path.Path, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"],"SharedMsg":["Shared.SharedMsg"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Pages.Internal.NotFoundReason.NotFoundReason":{"args":[],"tags":{"NoMatchingRoute":[],"NotPrerendered":["Pages.Internal.NotFoundReason.ModuleContext","List.List Pages.Internal.NotFoundReason.Record"],"NotPrerenderedOrHandledByFallback":["Pages.Internal.NotFoundReason.ModuleContext","List.List Pages.Internal.NotFoundReason.Record"],"UnhandledServerRoute":["Pages.Internal.NotFoundReason.ModuleContext"]}},"Path.Path":{"args":[],"tags":{"Path":["String.String"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Route.Route":{"args":[],"tags":{"Index":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Pages.Internal.RoutePattern.Ending":{"args":[],"tags":{"Optional":["String.String"],"RequiredSplat":[],"OptionalSplat":[]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}},"Pages.Internal.RoutePattern.Segment":{"args":[],"tags":{"StaticSegment":["String.String"],"DynamicSegment":["String.String"]}},"Shared.SharedMsg":{"args":[],"tags":{"NoOp":[]}}}}})}});
+_Platform_export({'TemplateModulesBeta':{'init':$author$project$TemplateModulesBeta$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Pages.Internal.Platform.Msg TemplateModulesBeta.Msg","aliases":{"Pages.ContentCache.ContentCache":{"args":[],"type":"Dict.Dict Pages.ContentCache.Path Pages.ContentCache.Entry"},"Pages.ContentCache.ContentJson":{"args":[],"type":"{ staticData : RequestsAndPending.RequestsAndPending, is404 : Basics.Bool, path : Maybe.Maybe String.String, notFoundReason : Maybe.Maybe Pages.Internal.NotFoundReason.Payload }"},"Page.Index.Msg":{"args":[],"type":"Basics.Never"},"Pages.ContentCache.Path":{"args":[],"type":"List.List String.String"},"Pages.Internal.NotFoundReason.Payload":{"args":[],"type":"{ path : Path.Path, reason : Pages.Internal.NotFoundReason.NotFoundReason }"},"RequestsAndPending.RequestsAndPending":{"args":[],"type":"Dict.Dict String.String (Maybe.Maybe String.String)"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Pages.Internal.NotFoundReason.ModuleContext":{"args":[],"type":"{ moduleName : List.List String.String, routePattern : Pages.Internal.RoutePattern.RoutePattern, matchedRouteParams : Pages.Internal.NotFoundReason.Record }"},"Pages.Internal.NotFoundReason.Record":{"args":[],"type":"List.List ( String.String, String.String )"},"Pages.Internal.RoutePattern.RoutePattern":{"args":[],"type":"{ segments : List.List Pages.Internal.RoutePattern.Segment, ending : Maybe.Maybe Pages.Internal.RoutePattern.Ending }"}},"unions":{"Pages.Internal.Platform.Msg":{"args":["userMsg"],"tags":{"LinkClicked":["Browser.UrlRequest"],"UrlChanged":["Url.Url"],"UserMsg":["userMsg"],"UpdateCache":["Result.Result Http.Error ( Url.Url, Pages.ContentCache.ContentJson, Pages.ContentCache.ContentCache )"],"UpdateCacheAndUrl":["Url.Url","Result.Result Http.Error ( Url.Url, Pages.ContentCache.ContentJson, Pages.ContentCache.ContentCache )"],"PageScrollComplete":[],"HotReloadComplete":["Pages.ContentCache.ContentJson"],"NoOp":[]}},"TemplateModulesBeta.Msg":{"args":[],"tags":{"MsgGlobal":["Shared.Msg"],"OnPageChange":["{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : Path.Path, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String, metadata : Maybe.Maybe Route.Route }"],"MsgIndex":["Page.Index.Msg"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Pages.ContentCache.Entry":{"args":[],"tags":{"Parsed":["Pages.ContentCache.ContentJson"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Shared.Msg":{"args":[],"tags":{"OnPageChange":["{ path : Path.Path, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"],"SharedMsg":["Shared.SharedMsg"],"Tick":["Time.Posix"]}},"Basics.Never":{"args":[],"tags":{"JustOneMore":["Basics.Never"]}},"Pages.Internal.NotFoundReason.NotFoundReason":{"args":[],"tags":{"NoMatchingRoute":[],"NotPrerendered":["Pages.Internal.NotFoundReason.ModuleContext","List.List Pages.Internal.NotFoundReason.Record"],"NotPrerenderedOrHandledByFallback":["Pages.Internal.NotFoundReason.ModuleContext","List.List Pages.Internal.NotFoundReason.Record"],"UnhandledServerRoute":["Pages.Internal.NotFoundReason.ModuleContext"]}},"Path.Path":{"args":[],"tags":{"Path":["String.String"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Route.Route":{"args":[],"tags":{"Index":[]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Pages.Internal.RoutePattern.Ending":{"args":[],"tags":{"Optional":["String.String"],"RequiredSplat":[],"OptionalSplat":[]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Pages.Internal.RoutePattern.Segment":{"args":[],"tags":{"StaticSegment":["String.String"],"DynamicSegment":["String.String"]}},"Shared.SharedMsg":{"args":[],"tags":{"NoOp":[]}}}}})}});
 
 //////////////////// HMR BEGIN ////////////////////
 

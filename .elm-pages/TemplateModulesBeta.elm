@@ -22,7 +22,9 @@ import Url
 import DataSource exposing (DataSource)
 import QueryParams
 
+import Page.About
 import Page.Index
+import Page.Me
 
 
 type alias Model =
@@ -42,7 +44,9 @@ type alias Model =
 
 
 type PageModel
-    = ModelIndex Page.Index.Model
+    = ModelAbout Page.About.Model
+    | ModelIndex Page.Index.Model
+    | ModelMe Page.Me.Model
 
     | NotFound
 
@@ -60,13 +64,17 @@ type Msg
         , fragment : Maybe String
         , metadata : Maybe Route
         }
+    | MsgAbout Page.About.Msg
     | MsgIndex Page.Index.Msg
+    | MsgMe Page.Me.Msg
 
 
 
 type PageData
     = Data404NotFoundPage____
+    | DataAbout Page.About.Data
     | DataIndex Page.Index.Data
+    | DataMe Page.Me.Data
 
 
 
@@ -84,6 +92,29 @@ view :
         }
 view page maybePageUrl globalData pageData =
     case ( page.route, pageData ) of
+        ( Just Route.About, DataAbout data ) ->
+                  { view =
+                      \model ->
+                          case model.page of
+                              ModelAbout subModel ->
+                                  Page.About.page.view
+                                      maybePageUrl
+                                      model.global
+                                      subModel
+                                      { data = data
+                                      , sharedData = globalData
+                                      , routeParams = {}
+                                      , path = page.path
+                                      }
+                                      |> View.map MsgAbout
+                                      |> Shared.template.view globalData page model.global MsgGlobal
+
+                              _ ->
+                                  { title = "Model mismatch", body = Html.text <| "Model mismatch" }
+                  , head = []
+                  }
+
+
         ( Just Route.Index, DataIndex data ) ->
                   { view =
                       \model ->
@@ -99,6 +130,29 @@ view page maybePageUrl globalData pageData =
                                       , path = page.path
                                       }
                                       |> View.map MsgIndex
+                                      |> Shared.template.view globalData page model.global MsgGlobal
+
+                              _ ->
+                                  { title = "Model mismatch", body = Html.text <| "Model mismatch" }
+                  , head = []
+                  }
+
+
+        ( Just Route.Me, DataMe data ) ->
+                  { view =
+                      \model ->
+                          case model.page of
+                              ModelMe subModel ->
+                                  Page.Me.page.view
+                                      maybePageUrl
+                                      model.global
+                                      subModel
+                                      { data = data
+                                      , sharedData = globalData
+                                      , routeParams = {}
+                                      , path = page.path
+                                      }
+                                      |> View.map MsgMe
                                       |> Shared.template.view globalData page model.global MsgGlobal
 
                               _ ->
@@ -145,6 +199,17 @@ init currentGlobalModel userFlags sharedData pageData navigationKey maybePagePat
 
         ( templateModel, templateCmd ) =
             case ( ( Maybe.map2 Tuple.pair (maybePagePath |> Maybe.andThen .metadata) (maybePagePath |> Maybe.map .path) ), pageData ) of
+                ( Just ( Route.About, justPath ), DataAbout thisPageData ) ->
+                    Page.About.page.init
+                        (Maybe.andThen .pageUrl maybePagePath)
+                        sharedModel
+                        { data = thisPageData
+                        , sharedData = sharedData
+                        , routeParams = {}
+                        , path = justPath.path
+                        }
+                        |> Tuple.mapBoth ModelAbout (Cmd.map MsgAbout)
+
                 ( Just ( Route.Index, justPath ), DataIndex thisPageData ) ->
                     Page.Index.page.init
                         (Maybe.andThen .pageUrl maybePagePath)
@@ -155,6 +220,17 @@ init currentGlobalModel userFlags sharedData pageData navigationKey maybePagePat
                         , path = justPath.path
                         }
                         |> Tuple.mapBoth ModelIndex (Cmd.map MsgIndex)
+
+                ( Just ( Route.Me, justPath ), DataMe thisPageData ) ->
+                    Page.Me.page.init
+                        (Maybe.andThen .pageUrl maybePagePath)
+                        sharedModel
+                        { data = thisPageData
+                        , sharedData = sharedData
+                        , routeParams = {}
+                        , path = justPath.path
+                        }
+                        |> Tuple.mapBoth ModelMe (Cmd.map MsgMe)
 
                 _ ->
                     ( NotFound, Cmd.none )
@@ -229,6 +305,40 @@ update sharedData pageData navigationKey msg model =
 
 
         
+        MsgAbout msg_ ->
+            let
+                ( updatedPageModel, pageCmd, ( newGlobalModel, newGlobalCmd ) ) =
+                    case ( model.page, pageData, Maybe.map3 (\a b c -> ( a, b, c )) (model.current |> Maybe.andThen .metadata) (model.current |> Maybe.andThen .pageUrl) (model.current |> Maybe.map .path) ) of
+                        ( ModelAbout pageModel, DataAbout thisPageData, Just ( Route.About, pageUrl, justPage ) ) ->
+                            Page.About.page.update
+                                pageUrl
+                                { data = thisPageData
+                                , sharedData = sharedData
+                                , routeParams = {}
+                                , path = justPage.path
+                                }
+                                navigationKey
+                                msg_
+                                pageModel
+                                model.global
+                                |> mapBoth ModelAbout (Cmd.map MsgAbout)
+                                |> (\( a, b, c ) ->
+                                        case c of
+                                            Just sharedMsg ->
+                                                ( a, b, Shared.template.update sharedMsg model.global )
+
+                                            Nothing ->
+                                                ( a, b, ( model.global, Cmd.none ) )
+                                   )
+
+                        _ ->
+                            ( model.page, Cmd.none, ( model.global, Cmd.none ) )
+            in
+            ( { model | page = updatedPageModel, global = newGlobalModel }
+            , Cmd.batch [ pageCmd, newGlobalCmd |> Cmd.map MsgGlobal ]
+            )
+
+        
         MsgIndex msg_ ->
             let
                 ( updatedPageModel, pageCmd, ( newGlobalModel, newGlobalCmd ) ) =
@@ -262,6 +372,40 @@ update sharedData pageData navigationKey msg model =
             , Cmd.batch [ pageCmd, newGlobalCmd |> Cmd.map MsgGlobal ]
             )
 
+        
+        MsgMe msg_ ->
+            let
+                ( updatedPageModel, pageCmd, ( newGlobalModel, newGlobalCmd ) ) =
+                    case ( model.page, pageData, Maybe.map3 (\a b c -> ( a, b, c )) (model.current |> Maybe.andThen .metadata) (model.current |> Maybe.andThen .pageUrl) (model.current |> Maybe.map .path) ) of
+                        ( ModelMe pageModel, DataMe thisPageData, Just ( Route.Me, pageUrl, justPage ) ) ->
+                            Page.Me.page.update
+                                pageUrl
+                                { data = thisPageData
+                                , sharedData = sharedData
+                                , routeParams = {}
+                                , path = justPage.path
+                                }
+                                navigationKey
+                                msg_
+                                pageModel
+                                model.global
+                                |> mapBoth ModelMe (Cmd.map MsgMe)
+                                |> (\( a, b, c ) ->
+                                        case c of
+                                            Just sharedMsg ->
+                                                ( a, b, Shared.template.update sharedMsg model.global )
+
+                                            Nothing ->
+                                                ( a, b, ( model.global, Cmd.none ) )
+                                   )
+
+                        _ ->
+                            ( model.page, Cmd.none, ( model.global, Cmd.none ) )
+            in
+            ( { model | page = updatedPageModel, global = newGlobalModel }
+            , Cmd.batch [ pageCmd, newGlobalCmd |> Cmd.map MsgGlobal ]
+            )
+
 
 
 type alias SiteConfig =
@@ -273,6 +417,16 @@ templateSubscriptions : Maybe Route -> Path -> Model -> Sub Msg
 templateSubscriptions route path model =
     case ( model.page, route ) of
         
+        ( ModelAbout templateModel, Just Route.About ) ->
+            Page.About.page.subscriptions
+                Nothing -- TODO wire through value
+                {}
+                path
+                templateModel
+                model.global
+                |> Sub.map MsgAbout
+
+        
         ( ModelIndex templateModel, Just Route.Index ) ->
             Page.Index.page.subscriptions
                 Nothing -- TODO wire through value
@@ -281,6 +435,16 @@ templateSubscriptions route path model =
                 templateModel
                 model.global
                 |> Sub.map MsgIndex
+
+        
+        ( ModelMe templateModel, Just Route.Me ) ->
+            Page.Me.page.subscriptions
+                Nothing -- TODO wire through value
+                {}
+                path
+                templateModel
+                model.global
+                |> Sub.map MsgMe
 
 
 
@@ -320,8 +484,12 @@ dataForRoute route =
     case route of
         Nothing ->
             DataSource.succeed Data404NotFoundPage____
+        Just Route.About ->
+            Page.About.page.data {} |> DataSource.map DataAbout
         Just Route.Index ->
             Page.Index.page.data {} |> DataSource.map DataIndex
+        Just Route.Me ->
+            Page.Me.page.data {} |> DataSource.map DataMe
 
 handleRoute : Maybe Route -> DataSource (Maybe Pages.Internal.NotFoundReason.NotFoundReason)
 handleRoute maybeRoute =
@@ -329,8 +497,12 @@ handleRoute maybeRoute =
         Nothing ->
             DataSource.succeed Nothing
 
+        Just (Route.About) ->
+            Page.About.page.handleRoute { moduleName = [ "About" ], routePattern = { segments = [ Pages.Internal.RoutePattern.StaticSegment "about" ], ending = Nothing } } (\param -> [  ]) {}
         Just (Route.Index) ->
             Page.Index.page.handleRoute { moduleName = [ "Index" ], routePattern = { segments = [  ], ending = Nothing } } (\param -> [  ]) {}
+        Just (Route.Me) ->
+            Page.Me.page.handleRoute { moduleName = [ "Me" ], routePattern = { segments = [ Pages.Internal.RoutePattern.StaticSegment "me" ], ending = Nothing } } (\param -> [  ]) {}
 
 
 stringToString : String -> String
@@ -382,7 +554,9 @@ routePatterns =
                     , ( "pathPattern", Json.Encode.string pathPattern )
                     ]
             )
-            [ { kind = Page.Index.page.kind, pathPattern = "/" }
+            [ { kind = Page.About.page.kind, pathPattern = "/about" }
+            , { kind = Page.Me.page.kind, pathPattern = "/me" }
+            , { kind = Page.Index.page.kind, pathPattern = "/" }
           
             ]
             |> (\json -> DataSource.succeed { body = Json.Encode.encode 0 json })
@@ -393,19 +567,25 @@ routePatterns =
 
 routePatterns2 : List String
 routePatterns2 =
-    [ "/"
+    [ "/about"
+    , "/me"
+    , "/"
     ]
 
 
 routePatterns3 : List Pages.Internal.RoutePattern.RoutePattern
 routePatterns3 =
-    [ { segments = [  ], ending = Nothing }
+    [ { segments = [ Pages.Internal.RoutePattern.StaticSegment "about" ], ending = Nothing }
+    , { segments = [ Pages.Internal.RoutePattern.StaticSegment "me" ], ending = Nothing }
+    , { segments = [  ], ending = Nothing }
     ]
 
 getStaticRoutes : DataSource (List Route)
 getStaticRoutes =
     DataSource.combine
-        [ Page.Index.page.staticRoutes |> DataSource.map (List.map (\_ -> Route.Index))
+        [ Page.About.page.staticRoutes |> DataSource.map (List.map (\_ -> Route.About))
+        , Page.Me.page.staticRoutes |> DataSource.map (List.map (\_ -> Route.Me))
+        , Page.Index.page.staticRoutes |> DataSource.map (List.map (\_ -> Route.Index))
         ]
         |> DataSource.map List.concat
 
