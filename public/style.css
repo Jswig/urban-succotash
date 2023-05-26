@@ -1,0 +1,29 @@
+html {
+    --background-color: #f2f2f2;
+    --text-color: #222222;
+    --toplevel-margin: 2rem;
+    
+    font-family: monospace;  
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+body {
+    margin: var(--toplevel-margin)
+}
+
+p {
+    text-align: justify;
+}
+
+#header {
+}
+
+#content {
+}
+
+#footer {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+}

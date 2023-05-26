@@ -3,7 +3,7 @@ module Shared exposing (Data, Model, Msg(..), SharedMsg(..), template)
 import Browser.Navigation
 import DataSource
 import Html exposing (Html)
-import Html.Attributes
+import Html.Attributes as Attributes
 import Pages.Flags
 import Pages.PageUrl exposing (PageUrl)
 import Path exposing (Path)
@@ -100,12 +100,12 @@ data =
 
 link : String -> String -> Html msg
 link path label =
-    Html.div [] [ Html.a [ Html.Attributes.href path ] [ Html.text label ] ]
+    Html.div [ Attributes.class "link" ] [ Html.a [ Attributes.href path ] [ Html.text label ] ]
 
 
-navBar : Html msg
-navBar =
-    Html.div []
+navigationBar : Html msg
+navigationBar =
+    Html.div [ Attributes.class "navigation-bar" ]
         [ link "/" "home"
         , link "/me" "me"
         ]
@@ -113,7 +113,7 @@ navBar =
 
 header : Html msg
 header =
-    Html.header [] [ navBar ]
+    Html.header [ Attributes.id "header" ] [ navigationBar ]
 
 
 footer : Time.Posix -> Html msg
@@ -122,7 +122,7 @@ footer currentTime =
         year =
             String.fromInt (Time.toYear Time.utc currentTime)
     in
-    Html.footer []
+    Html.footer [ Attributes.id "footer" ]
         [ Html.text ("©" ++ year ++ " Anders Poirel")
         , link "/about" "about this site"
         ]
@@ -142,7 +142,8 @@ view sharedData page model toMsg pageView =
     let
         bodyContent =
             [ header
-            , Html.div [] pageView.body
+            , Html.div [ Attributes.id "content" ] pageView.body
+            , Html.hr [] []
             , footer model.currentTime
             ]
     in
