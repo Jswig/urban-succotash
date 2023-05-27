@@ -1,4 +1,4 @@
-module Page.About exposing (Data, Model, Msg, page)
+module Page.Site exposing (Data, Model, Msg, page)
 
 import DataSource exposing (DataSource)
 import DataSource.File exposing (bodyWithoutFrontmatter)
@@ -68,6 +68,6 @@ view :
     -> StaticPayload Data RouteParams
     -> View Msg
 view maybeUrl sharedModel static =
-    { title = "About this website"
+    { title = "About this site"
     , body = [ Markdown.toHtml [] static.data ]
     }

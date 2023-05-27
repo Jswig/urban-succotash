@@ -98,22 +98,22 @@ data =
     DataSource.succeed ()
 
 
-link : String -> String -> Html msg
-link path label =
-    Html.div [ Attributes.class "link" ] [ Html.a [ Attributes.href path ] [ Html.text label ] ]
+navigationBarLink : String -> String -> Html msg
+navigationBarLink path label =
+    Html.a [ Attributes.href path, Attributes.class "navigation_bar__link" ] [ Html.text label ]
 
 
 navigationBar : Html msg
 navigationBar =
-    Html.div [ Attributes.class "navigation-bar" ]
-        [ link "/" "home"
-        , link "/me" "me"
+    Html.div [ Attributes.class "navigation_bar" ]
+        [ navigationBarLink "/" "home"
+        , navigationBarLink "/me" "about me"
         ]
 
 
 header : Html msg
 header =
-    Html.header [ Attributes.id "header" ] [ navigationBar ]
+    Html.header [ Attributes.id "page-header" ] [ navigationBar ]
 
 
 footer : Time.Posix -> Html msg
@@ -122,9 +122,9 @@ footer currentTime =
         year =
             String.fromInt (Time.toYear Time.utc currentTime)
     in
-    Html.footer [ Attributes.id "footer" ]
+    Html.footer [ Attributes.id "page-footer" ]
         [ Html.text ("©" ++ year ++ " Anders Poirel")
-        , link "/about" "about this site"
+        , Html.a [ Attributes.href "/about" ] [ Html.text "about this site" ]
         ]
 
 
@@ -141,10 +141,11 @@ view :
 view sharedData page model toMsg pageView =
     let
         bodyContent =
-            [ header
-            , Html.div [ Attributes.id "content" ] pageView.body
-            , Html.hr [] []
-            , footer model.currentTime
+            [ Html.div [ Attributes.id "body-content" ]
+                [ header
+                , Html.div [ Attributes.id "page-content" ] pageView.body
+                , footer model.currentTime
+                ]
             ]
     in
     { body = Html.div [] bodyContent

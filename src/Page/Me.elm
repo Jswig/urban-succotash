@@ -4,7 +4,6 @@ import DataSource exposing (DataSource)
 import DataSource.File exposing (bodyWithoutFrontmatter)
 import Head
 import Head.Seo as Seo
-import Html
 import Markdown
 import Page exposing (Page, PageWithState, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
