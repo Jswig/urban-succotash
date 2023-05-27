@@ -124,7 +124,7 @@ footer currentTime =
     in
     Html.footer [ Attributes.id "page-footer" ]
         [ Html.text ("©" ++ year ++ " Anders Poirel")
-        , Html.a [ Attributes.href "/about" ] [ Html.text "about this site" ]
+        , Html.a [ Attributes.href "/site" ] [ Html.text "about this site" ]
         ]
 
 
@@ -141,13 +141,14 @@ view :
 view sharedData page model toMsg pageView =
     let
         bodyContent =
-            [ Html.div [ Attributes.id "body-content" ]
+            Html.div [ Attributes.id "body-content" ]
                 [ header
-                , Html.div [ Attributes.id "page-content" ] pageView.body
+                , Html.div [ Attributes.id "page-content" ]
+                    [ Html.div [ Attributes.id "page-content-body" ] pageView.body
+                    ]
                 , footer model.currentTime
                 ]
-            ]
     in
-    { body = Html.div [] bodyContent
+    { body = bodyContent
     , title = pageView.title
     }
