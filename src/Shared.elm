@@ -3,7 +3,7 @@ module Shared exposing (Data, Model, Msg(..), SharedMsg(..), template)
 import Browser.Navigation
 import DataSource
 import Html exposing (Html)
-import Html.Attributes
+import Html.Attributes as Attributes
 import Pages.Flags
 import Pages.PageUrl exposing (PageUrl)
 import Path exposing (Path)
@@ -98,22 +98,22 @@ data =
     DataSource.succeed ()
 
 
-link : String -> String -> Html msg
-link path label =
-    Html.div [] [ Html.a [ Html.Attributes.href path ] [ Html.text label ] ]
+navigationBarLink : String -> String -> Html msg
+navigationBarLink path label =
+    Html.a [ Attributes.href path, Attributes.class "navigation_bar__link" ] [ Html.text label ]
 
 
-navBar : Html msg
-navBar =
-    Html.div []
-        [ link "/" "home"
-        , link "/me" "me"
+navigationBar : Html msg
+navigationBar =
+    Html.div [ Attributes.class "navigation_bar" ]
+        [ navigationBarLink "/" "home"
+        , navigationBarLink "/me" "about me"
         ]
 
 
 header : Html msg
 header =
-    Html.header [] [ navBar ]
+    Html.header [ Attributes.id "page-header" ] [ navigationBar ]
 
 
 footer : Time.Posix -> Html msg
@@ -122,9 +122,9 @@ footer currentTime =
         year =
             String.fromInt (Time.toYear Time.utc currentTime)
     in
-    Html.footer []
+    Html.footer [ Attributes.id "page-footer" ]
         [ Html.text ("©" ++ year ++ " Anders Poirel")
-        , link "/about" "about this site"
+        , Html.a [ Attributes.href "/site" ] [ Html.text "about this site" ]
         ]
 
 
@@ -141,11 +141,14 @@ view :
 view sharedData page model toMsg pageView =
     let
         bodyContent =
-            [ header
-            , Html.div [] pageView.body
-            , footer model.currentTime
-            ]
+            Html.div [ Attributes.id "body-content" ]
+                [ header
+                , Html.div [ Attributes.id "page-content" ]
+                    [ Html.div [ Attributes.id "page-content-body" ] pageView.body
+                    ]
+                , footer model.currentTime
+                ]
     in
-    { body = Html.div [] bodyContent
+    { body = bodyContent
     , title = pageView.title
     }

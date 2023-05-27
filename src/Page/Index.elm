@@ -3,6 +3,7 @@ module Page.Index exposing (Data, Model, Msg, page)
 import DataSource exposing (DataSource)
 import Head
 import Head.Seo as Seo
+import Html exposing (Html)
 import Page exposing (Page, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
@@ -66,4 +67,6 @@ view :
     -> StaticPayload Data RouteParams
     -> View Msg
 view maybeUrl sharedModel static =
-    View.placeholder "Index"
+    { title = "Home"
+    , body = [ Html.canvas [] [] ]
+    }
