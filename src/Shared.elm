@@ -107,7 +107,9 @@ navigationBar : Html msg
 navigationBar =
     Html.div [ Attributes.class "navigation_bar" ]
         [ navigationBarLink "/" "home"
+        , navigationBarLink "/blog" "blog"
         , navigationBarLink "/me" "about me"
+        , navigationBarLink "/anders_poirel_resume.pdf" "resume"
         ]
 
 
