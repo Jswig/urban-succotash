@@ -39,7 +39,7 @@ type alias Data =
 
 data : DataSource Data
 data =
-    DataSource.File.bodyWithoutFrontmatter "content/about.md"
+    DataSource.File.bodyWithoutFrontmatter "content/site.md"
 
 
 head :
