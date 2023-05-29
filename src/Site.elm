@@ -1,5 +1,6 @@
 module Site exposing (config)
 
+import Constants exposing (canonicalUrl, siteName)
 import DataSource
 import Head
 import Pages.Manifest as Manifest
@@ -14,7 +15,7 @@ type alias Data =
 config : SiteConfig Data
 config =
     { data = data
-    , canonicalUrl = "https://anderspoirel.me"
+    , canonicalUrl = canonicalUrl
     , manifest = manifest
     , head = head
     }
@@ -34,7 +35,7 @@ head static =
 manifest : Data -> Manifest.Config
 manifest static =
     Manifest.init
-        { name = "Anders Poirel"
+        { name = siteName
         , description = "Anders Poirel' personal website"
         , startUrl = Route.Index |> Route.toPath
         , icons = []

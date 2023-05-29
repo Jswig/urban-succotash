@@ -1,10 +1,8 @@
-module Page.Me exposing (Data, Model, Msg, page)
+module Page.Blog.Post_ exposing (Data, Model, Msg, page)
 
 import DataSource exposing (DataSource)
-import DataSource.File exposing (bodyWithoutFrontmatter)
 import Head
 import Head.Seo as Seo
-import Markdown
 import Page exposing (Page, PageWithState, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
@@ -21,25 +19,27 @@ type alias Msg =
 
 
 type alias RouteParams =
-    {}
+    { post : String }
 
 
 page : Page RouteParams Data
 page =
-    Page.single
+    Page.prerender
         { head = head
+        , routes = routes
         , data = data
         }
         |> Page.buildNoState { view = view }
 
 
-type alias Data =
-    String
+routes : DataSource (List RouteParams)
+routes =
+    DataSource.succeed []
 
 
-data : DataSource Data
-data =
-    DataSource.File.bodyWithoutFrontmatter "content/me.md"
+data : RouteParams -> DataSource Data
+data routeParams =
+    DataSource.succeed ()
 
 
 head :
@@ -62,12 +62,14 @@ head static =
         |> Seo.website
 
 
+type alias Data =
+    ()
+
+
 view :
     Maybe PageUrl
     -> Shared.Model
     -> StaticPayload Data RouteParams
     -> View Msg
 view maybeUrl sharedModel static =
-    { title = "About me"
-    , body = [ Markdown.toHtml [] static.data ]
-    }
+    View.placeholder "Blog.Post_"

@@ -108,7 +108,7 @@ navigationBar =
     Html.div [ Attributes.class "navigation_bar" ]
         [ navigationBarLink "/" "home"
         , navigationBarLink "/blog" "blog"
-        , navigationBarLink "/me" "about me"
+        , navigationBarLink "/about-me" "about me"
         , navigationBarLink "/anders_poirel_resume.pdf" "resume"
         ]
 
@@ -126,7 +126,7 @@ footer currentTime =
     in
     Html.footer [ Attributes.id "page-footer" ]
         [ Html.text ("©" ++ year ++ " Anders Poirel")
-        , Html.a [ Attributes.href "/site" ] [ Html.text "about this site" ]
+        , Html.a [ Attributes.href "/about-site" ] [ Html.text "about this site" ]
         ]
 
 

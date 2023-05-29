@@ -1,4 +1,4 @@
-module Page.Site exposing (Data, Model, Msg, page)
+module Page.AboutSite exposing (Data, Model, Msg, page)
 
 import DataSource exposing (DataSource)
 import DataSource.File exposing (bodyWithoutFrontmatter)
